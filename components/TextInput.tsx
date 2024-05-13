@@ -9,6 +9,8 @@ const AppTextInput: React.FC<TextInputProps> = ({ ...otherProps }) => {
   const [focused, setFocused] = useState<boolean>(false);
   return (
     <TextInput
+      autoCapitalize="none"
+      autoCorrect={false}
       onFocus={() => setFocused(true)}
       onBlur={() => setFocused(false)}
       placeholderTextColor={Colors.darkText}

@@ -1,11 +1,12 @@
 import {
+  ActivityIndicator,
   SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import React from 'react';
+import React, { useState } from 'react';
 import Spacing from '../constants/Spacing';
 import FontSize from '../constants/FontSize';
 import Colors from '../constants/Colors';
@@ -13,10 +14,30 @@ import Font from '../constants/Font';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import AppTextInput from '../components/TextInput';
+import { FIREBASE_AUTH } from '../FirebaseConfig';
+
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 const Login: React.FC<Props> = ({ navigation: { navigate } }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const auth = FIREBASE_AUTH;
+
+  async function signIn() {
+    setIsLoading(true);
+    try {
+      const response = await signInWithEmailAndPassword(auth, email, password);
+      console.log(response);
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   return (
     <SafeAreaView>
       <View
@@ -50,6 +71,7 @@ const Login: React.FC<Props> = ({ navigation: { navigate } }) => {
         </View>
 
         <TouchableOpacity
+          onPress={signIn}
           style={{
             padding: Spacing * 2,
             backgroundColor: Colors.primary,
@@ -75,6 +97,7 @@ const Login: React.FC<Props> = ({ navigation: { navigate } }) => {
             Entrar
           </Text>
         </TouchableOpacity>
+        <ActivityIndicator animating={isLoading} />
         <TouchableOpacity
           onPress={() => navigate('Register')}
           style={{

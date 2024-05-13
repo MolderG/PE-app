@@ -43,20 +43,7 @@ const Welcome: React.FC<Props> = ({ navigation: { navigate } }) => {
               textAlign: 'center',
             }}
           >
-            Discover Your Dream Job here
-          </Text>
-
-          <Text
-            style={{
-              fontSize: FontSize.small,
-              color: Colors.text,
-              fontFamily: Font['poppins-regular'],
-              textAlign: 'center',
-              marginTop: Spacing * 2,
-            }}
-          >
-            Explore all the existing job roles based or your interest and study
-            major
+            Projeto PE
           </Text>
         </View>
         <View
@@ -111,7 +98,7 @@ const Welcome: React.FC<Props> = ({ navigation: { navigate } }) => {
                 textAlign: 'center',
               }}
             >
-              Register
+              Criar conta
             </Text>
           </TouchableOpacity>
         </View>
