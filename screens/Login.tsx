@@ -13,10 +13,9 @@ import Colors from '../constants/Colors';
 import Font from '../constants/Font';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
-import AppTextInput from '../components/TextInput';
+import { AppTextInput } from '../components/TextInput';
 import { FIREBASE_AUTH } from '../FirebaseConfig';
-
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signIn } from '../services/auth';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
@@ -26,17 +25,17 @@ const Login: React.FC<Props> = ({ navigation: { navigate } }) => {
   const [isLoading, setIsLoading] = useState(false);
   const auth = FIREBASE_AUTH;
 
-  async function signIn() {
+  const handleLogin = async () => {
     setIsLoading(true);
     try {
-      const response = await signInWithEmailAndPassword(auth, email, password);
-      console.log(response);
+      await signIn(email, password);
     } catch (error) {
+      setIsLoading(false);
       console.log(error);
     } finally {
       setIsLoading(false);
     }
-  }
+  };
 
   return (
     <SafeAreaView>
@@ -66,12 +65,20 @@ const Login: React.FC<Props> = ({ navigation: { navigate } }) => {
             marginVertical: Spacing * 3,
           }}
         >
-          <AppTextInput placeholder="E-mail" />
-          <AppTextInput placeholder="Senha" />
+          <AppTextInput
+            placeholder="E-mail"
+            value={email}
+            onChangeText={setEmail}
+          />
+          <AppTextInput
+            placeholder="Senha"
+            value={password}
+            onChangeText={setPassword}
+          />
         </View>
 
         <TouchableOpacity
-          onPress={signIn}
+          onPress={handleLogin}
           style={{
             padding: Spacing * 2,
             backgroundColor: Colors.primary,

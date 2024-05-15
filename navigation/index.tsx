@@ -6,6 +6,10 @@ import Login from '../screens/Login';
 import { RootStackParamList } from '../types';
 import Register from '../screens/Register';
 import Welcome from '../screens/Welcome';
+import { User } from 'firebase/auth';
+import { FIREBASE_AUTH } from '../FirebaseConfig';
+import { ActivityIndicator, View } from 'react-native';
+import Home from '../screens/Home';
 
 const theme = {
   ...DefaultTheme,
@@ -30,15 +34,44 @@ export default function Navigation() {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function RootNavigator() {
+  const [initializing, setInitializing] = React.useState(true);
+  const [user, setUser] = React.useState<User | null>(null);
+  const auth = FIREBASE_AUTH;
+
+  React.useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((_user) => {
+      if (initializing) {
+        setInitializing(false);
+      }
+      setUser(_user);
+    });
+
+    return unsubscribe;
+  }, [initializing]);
+
+  if (initializing) {
+    return (
+      <View>
+        <ActivityIndicator color={Colors.primary} />
+      </View>
+    );
+  }
+
   return (
     <Stack.Navigator
       screenOptions={{
         headerShown: false,
       }}
     >
-      <Stack.Screen name="Welcome" component={Welcome} />
-      <Stack.Screen name="Login" component={Login} />
-      <Stack.Screen name="Register" component={Register} />
+      {user ? (
+        <Stack.Screen name="Home" component={Home} />
+      ) : (
+        <>
+          <Stack.Screen name="Welcome" component={Welcome} />
+          <Stack.Screen name="Login" component={Login} />
+          <Stack.Screen name="Register" component={Register} />
+        </>
+      )}
     </Stack.Navigator>
   );
 }

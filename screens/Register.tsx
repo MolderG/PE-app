@@ -1,16 +1,39 @@
-import { SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
-import React from 'react';
+import {
+  ActivityIndicator,
+  SafeAreaView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import React, { useState } from 'react';
 import Spacing from '../constants/Spacing';
 import FontSize from '../constants/FontSize';
 import Colors from '../constants/Colors';
 import Font from '../constants/Font';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
-import AppTextInput from '../components/TextInput';
+import { AppTextInput } from '../components/TextInput';
+import { signUp } from '../services/auth';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
 
 const Register: React.FC<Props> = ({ navigation: { navigate } }) => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, serIsLoading] = useState(false);
+
+  const handleSignup = async () => {
+    serIsLoading(true);
+    try {
+      await signUp(email, password);
+    } catch (error) {
+      serIsLoading(true);
+      console.log(error);
+    } finally {
+      serIsLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView>
       <View
@@ -39,37 +62,50 @@ const Register: React.FC<Props> = ({ navigation: { navigate } }) => {
             marginVertical: Spacing * 3,
           }}
         >
-          <AppTextInput placeholder="E-mail" />
-          <AppTextInput placeholder="Senha" />
-          <AppTextInput placeholder="Confirme a senha" />
+          <AppTextInput
+            placeholder="E-mail"
+            value={email}
+            onChangeText={setEmail}
+          />
+          <AppTextInput
+            placeholder="Senha"
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+          />
         </View>
-
-        <TouchableOpacity
-          style={{
-            padding: Spacing * 2,
-            backgroundColor: Colors.primary,
-            marginVertical: Spacing * 3,
-            borderRadius: Spacing,
-            shadowColor: Colors.primary,
-            shadowOffset: {
-              width: 0,
-              height: Spacing,
-            },
-            shadowOpacity: 0.3,
-            shadowRadius: Spacing,
-          }}
-        >
-          <Text
+        {isLoading ? (
+          <ActivityIndicator />
+        ) : (
+          <TouchableOpacity
+            onPress={handleSignup}
             style={{
-              fontFamily: Font['poppins-bold'],
-              color: Colors.onPrimary,
-              textAlign: 'center',
-              fontSize: FontSize.large,
+              padding: Spacing * 2,
+              backgroundColor: Colors.primary,
+              marginVertical: Spacing * 3,
+              borderRadius: Spacing,
+              shadowColor: Colors.primary,
+              shadowOffset: {
+                width: 0,
+                height: Spacing,
+              },
+              shadowOpacity: 0.3,
+              shadowRadius: Spacing,
             }}
           >
-            Sign up
-          </Text>
-        </TouchableOpacity>
+            <Text
+              style={{
+                fontFamily: Font['poppins-bold'],
+                color: Colors.onPrimary,
+                textAlign: 'center',
+                fontSize: FontSize.large,
+              }}
+            >
+              Criar Conta
+            </Text>
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity
           onPress={() => navigate('Login')}
           style={{
