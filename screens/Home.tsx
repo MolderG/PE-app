@@ -1,7 +1,6 @@
 import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import React, { useEffect, useState } from 'react';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../types';
+import { RootBottomTabParamList } from '../types';
 import {
   Canvas,
   Line,
@@ -19,8 +18,9 @@ import { onValue, ref } from 'firebase/database';
 import { FIREBASE_DB_REAL_TIME } from '../FirebaseConfig';
 import { curveBasis, line, scaleLinear } from 'd3';
 import { signOut } from '../services/auth';
+import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
+type Props = BottomTabScreenProps<RootBottomTabParamList, 'Home'>;
 
 interface GraphData {
   min: number;
