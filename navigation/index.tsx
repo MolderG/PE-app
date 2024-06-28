@@ -12,6 +12,7 @@ import { User } from 'firebase/auth';
 import { FIREBASE_AUTH } from '../FirebaseConfig';
 import { ActivityIndicator, View } from 'react-native';
 import Home from '../screens/Home';
+import Profile from '../screens/Profile';
 
 const theme = {
   ...DefaultTheme,
@@ -75,8 +76,7 @@ function RootStackNavigator() {
 function RootTabNavigator() {
   return (
     <Tab.Navigator>
-      <Tab.Screen name="Home" component={Home} />
-      <Tab.Screen name="Home" component={Home} />
+      <Tab.Screen name="Profile" component={Profile} />
       <Tab.Screen name="Home" component={Home} />
     </Tab.Navigator>
   );

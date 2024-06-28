@@ -29,10 +29,9 @@ interface GraphData {
 }
 
 interface Reading {
-  created_at: string;
-  current: number;
-  id: string;
-  voltage: number;
+  corrente: number;
+  dataRegistro: string;
+  voltagem: number;
 }
 
 const Home: React.FC<Props> = ({ navigation: { navigate } }) => {
@@ -46,7 +45,7 @@ const Home: React.FC<Props> = ({ navigation: { navigate } }) => {
   const calculateSum = () => {
     const sum = data.reduce(
       (acc, reading) =>
-        acc + (chartIsVoltage ? reading.voltage : reading.current),
+        acc + (chartIsVoltage ? reading.voltagem : reading.corrente),
       0,
     );
 
@@ -54,33 +53,30 @@ const Home: React.FC<Props> = ({ navigation: { navigate } }) => {
     return avg.toFixed(2);
   };
 
-  const parseFirebaseData = (data: { [key: string]: any }): Reading[] => {
-    return Object.entries(data).map(([key, readingData]) => {
-      const { created_at, current, id, voltage } = readingData;
-      return {
-        created_at,
-        current: parseFloat(current),
-        id: id,
-        voltage: parseFloat(voltage),
-      };
-    });
+  const parseFirebaseData = (data: { [key: string]: any }): Reading => {
+    if (!data) {
+      return { corrente: 0, dataRegistro: '', voltagem: 0 };
+    }
+
+    const { corrente, dataRegistro, voltagem } = data;
+
+    return {
+      corrente: parseFloat(corrente) || 0,
+      voltagem: parseFloat(voltagem) || 0,
+      dataRegistro: dataRegistro || '',
+    };
   };
 
   useEffect(() => {
     const fetchData = () => {
-      onValue(
-        ref(
-          FIREBASE_DB_REAL_TIME,
-          '/1bvMGOf55IPzi0HCSpG80UfdUIT4cknTbzUQxKq86UxE/Página1',
-        ),
-        (querySnapShot) => {
-          let data = querySnapShot.val() || {};
-          let items = { ...data };
-          let parsedData = parseFirebaseData(items);
-          setData(parsedData);
-          setLoading(false); // Set loading to false after data is fetched
-        },
-      );
+      onValue(ref(FIREBASE_DB_REAL_TIME, '/Sensor'), (querySnapShot) => {
+        const data = querySnapShot.val();
+        if (data) {
+          const parsedData = parseFirebaseData(data);
+          setData((prevData) => [...prevData, parsedData]);
+        }
+        setLoading(false);
+      });
     };
 
     fetchData();
@@ -89,27 +85,24 @@ const Home: React.FC<Props> = ({ navigation: { navigate } }) => {
   const graph = (data: Reading[]): GraphData => {
     const min = Math.min(
       ...data.map((value) =>
-        chartIsVoltage ? Number(value.voltage) : Number(value.current),
+        chartIsVoltage ? Number(value.voltagem) : Number(value.corrente),
       ),
     );
     const max = Math.max(
       ...data.map((value) =>
-        chartIsVoltage ? Number(value.voltage) : Number(value.current),
+        chartIsVoltage ? Number(value.voltagem) : Number(value.corrente),
       ),
     );
 
     const getYAxis = scaleLinear().domain([0, max]).range([GRAPH_HEIGHT, 35]);
     const getXAxis = scaleLinear()
-      .domain([
-        new Date(data[0].created_at),
-        new Date(data[data.length - 1].created_at),
-      ])
+      .domain([0, data.length - 1])
       .range([10, GRAPH_WIDTH - 10]);
 
     const curvedLine = line<Reading>()
-      .x((d) => getXAxis(new Date(d.created_at)))
+      .x((d, i) => getXAxis(i))
       .y((d) =>
-        getYAxis(chartIsVoltage ? Number(d.voltage) : Number(d.current)),
+        getYAxis(chartIsVoltage ? Number(d.voltagem) : Number(d.corrente)),
       )
       .curve(curveBasis)(data);
 

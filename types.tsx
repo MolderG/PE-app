@@ -24,6 +24,7 @@ export type RootStackParamList = {
 
 export type RootBottomTabParamList = {
   Home: undefined;
+  Profile: undefined;
 };
 
 export type RootStackScreenProps<Screen extends keyof RootStackParamList> =
