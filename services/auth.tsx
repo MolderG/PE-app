@@ -14,7 +14,6 @@ export const signUp = async (email: string, password: string) => {
       password,
     );
     const user = userCredentials.user;
-    console.log('Usuário registrado:', user);
     return user;
   } catch (error) {
     throw error;
@@ -29,7 +28,6 @@ export const signIn = async (email: string, password: string) => {
       password,
     );
     const user = userCredentials.user;
-    console.log('Usuário logado:', user);
   } catch (error) {
     throw error;
   }
@@ -38,7 +36,6 @@ export const signIn = async (email: string, password: string) => {
 export const signOut = async () => {
   try {
     await auth.signOut();
-    console.log('Usuário deslogado');
   } catch (error) {
     throw error;
   }

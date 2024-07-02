@@ -1,14 +1,8 @@
 import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import React, { useEffect, useState } from 'react';
 import { RootBottomTabParamList } from '../types';
-import {
-  Canvas,
-  Line,
-  Path,
-  SkPath,
-  Skia,
-  vec,
-} from '@shopify/react-native-skia';
+import { Canvas, Line, Path, Skia, vec } from '@shopify/react-native-skia';
 import Colors from '../constants/Colors';
 import Layout from '../constants/Layout';
 import Font from '../constants/Font';
@@ -22,48 +16,81 @@ import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 
 type Props = BottomTabScreenProps<RootBottomTabParamList, 'Home'>;
 
-interface GraphData {
-  min: number;
-  max: number;
-  curve: SkPath;
-}
-
 interface Reading {
   corrente: number;
   dataRegistro: string;
+  potenciaAtiva: number;
+  potenciaAparente: number;
+  kWhConsumido: number;
   voltagem: number;
 }
+
+type ChartType =
+  | 'voltage'
+  | 'current'
+  | 'activePower'
+  | 'apparentPower'
+  | 'kWh';
 
 const Home: React.FC<Props> = ({ navigation: { navigate } }) => {
   const GRAPH_HEIGHT = 400;
   const GRAPH_WIDTH = Layout.width;
-  const [chartIsVoltage, setChartIsVoltage] = useState(true);
+  const [chartType, setChartType] = useState<ChartType>('current');
   const [data, setData] = useState<Reading[]>([]);
   const [loading, setLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
 
   const calculateSum = () => {
-    const sum = data.reduce(
-      (acc, reading) =>
-        acc + (chartIsVoltage ? reading.voltagem : reading.corrente),
-      0,
-    );
+    const sum = data.reduce((acc, reading) => {
+      switch (chartType) {
+        case 'voltage':
+          return acc + reading.voltagem;
+        case 'current':
+          return acc + reading.corrente;
+        case 'activePower':
+          return acc + reading.potenciaAtiva;
+        case 'apparentPower':
+          return acc + reading.potenciaAparente;
+        case 'kWh':
+          return acc + reading.kWhConsumido;
+        default:
+          return acc;
+      }
+    }, 0);
 
     const avg = sum / data.length;
-    return avg.toFixed(2);
+
+    return avg.toFixed(3);
   };
 
   const parseFirebaseData = (data: { [key: string]: any }): Reading => {
     if (!data) {
-      return { corrente: 0, dataRegistro: '', voltagem: 0 };
+      return {
+        corrente: 0,
+        dataRegistro: '',
+        voltagem: 0,
+        potenciaAtiva: 0,
+        potenciaAparente: 0,
+        kWhConsumido: 0,
+      };
     }
 
-    const { corrente, dataRegistro, voltagem } = data;
+    const {
+      corrente,
+      dataRegistro,
+      voltagem,
+      potenciaAtiva,
+      potenciaAparente,
+      kWhConsumido,
+    } = data;
 
     return {
       corrente: parseFloat(corrente) || 0,
-      voltagem: parseFloat(voltagem) || 0,
       dataRegistro: dataRegistro || '',
+      voltagem: parseFloat(voltagem) || 0,
+      potenciaAtiva: parseFloat(potenciaAtiva) || 0,
+      potenciaAparente: parseFloat(potenciaAparente) || 0,
+      kWhConsumido: parseFloat(kWhConsumido) || 0,
     };
   };
 
@@ -73,6 +100,7 @@ const Home: React.FC<Props> = ({ navigation: { navigate } }) => {
         const data = querySnapShot.val();
         if (data) {
           const parsedData = parseFirebaseData(data);
+
           setData((prevData) => [...prevData, parsedData]);
         }
         setLoading(false);
@@ -82,15 +110,31 @@ const Home: React.FC<Props> = ({ navigation: { navigate } }) => {
     fetchData();
   }, []);
 
-  const graph = (data: Reading[]): GraphData => {
+  const graph = (data: Reading[]) => {
     const min = Math.min(
       ...data.map((value) =>
-        chartIsVoltage ? Number(value.voltagem) : Number(value.corrente),
+        chartType === 'voltage'
+          ? Number(value.voltagem)
+          : chartType === 'current'
+          ? Number(value.corrente)
+          : chartType === 'activePower'
+          ? Number(value.potenciaAtiva)
+          : chartType === 'apparentPower'
+          ? Number(value.potenciaAparente)
+          : 0,
       ),
     );
     const max = Math.max(
       ...data.map((value) =>
-        chartIsVoltage ? Number(value.voltagem) : Number(value.corrente),
+        chartType === 'voltage'
+          ? Number(value.voltagem)
+          : chartType === 'current'
+          ? Number(value.corrente)
+          : chartType === 'activePower'
+          ? Number(value.potenciaAtiva)
+          : chartType === 'apparentPower'
+          ? Number(value.potenciaAparente)
+          : 0,
       ),
     );
 
@@ -102,7 +146,19 @@ const Home: React.FC<Props> = ({ navigation: { navigate } }) => {
     const curvedLine = line<Reading>()
       .x((d, i) => getXAxis(i))
       .y((d) =>
-        getYAxis(chartIsVoltage ? Number(d.voltagem) : Number(d.corrente)),
+        getYAxis(
+          chartType === 'voltage'
+            ? Number(d.voltagem)
+            : chartType === 'current'
+            ? Number(d.corrente)
+            : chartType === 'activePower'
+            ? Number(d.potenciaAtiva)
+            : chartType === 'apparentPower'
+            ? Number(d.potenciaAparente)
+            : chartType === 'kWh'
+            ? Number(d.kWhConsumido)
+            : 0,
+        ),
       )
       .curve(curveBasis)(data);
 
@@ -140,6 +196,7 @@ const Home: React.FC<Props> = ({ navigation: { navigate } }) => {
     <SafeAreaView>
       <View
         style={{
+          padding: Spacing,
           height: Layout.height,
           alignItems: 'center',
           width: Layout.width,
@@ -175,10 +232,10 @@ const Home: React.FC<Props> = ({ navigation: { navigate } }) => {
         </Pressable>
         <Text
           style={{
-            fontSize: FontSize.xLarge,
-            color: Colors.primary,
+            fontSize: FontSize.large,
+            color: Colors.darkText,
+            textAlign: 'center',
             fontFamily: Font['poppins-bold'],
-            marginVertical: Spacing * 3,
           }}
         >
           CENTRAL DE MEDIÇÕES
@@ -194,24 +251,20 @@ const Home: React.FC<Props> = ({ navigation: { navigate } }) => {
         >
           <Text
             style={{
-              fontSize: FontSize.medium,
-              color: Colors.darkText,
-              fontFamily: Font['poppins-bold'],
-              textAlign: 'center',
-            }}
-          >
-            Medição {chartIsVoltage ? 'voltagem' : 'corrente'} média durante o
-            período
-          </Text>
-          <Text
-            style={{
               fontSize: FontSize.xxLarge,
               color: Colors.primary,
               fontFamily: Font['poppins-bold'],
               textAlign: 'center',
             }}
           >
-            {calculateSum()} {chartIsVoltage ? 'V' : 'A'}
+            {calculateSum()}{' '}
+            {chartType === 'voltage'
+              ? 'V'
+              : chartType === 'current'
+              ? 'A'
+              : chartType === 'activePower' || chartType === 'apparentPower'
+              ? 'W'
+              : 'kWh'}
           </Text>
         </View>
         <View
@@ -230,81 +283,22 @@ const Home: React.FC<Props> = ({ navigation: { navigate } }) => {
               textAlign: 'center',
             }}
           >
-            Início: 20/03/2024
-          </Text>
-          <Text
-            style={{
-              fontSize: FontSize.small,
-              color: Colors.text,
-              fontFamily: Font['poppins-bold'],
-              textAlign: 'center',
-            }}
-          >
-            Fim: 20/03/2024
+            Data do registro: 20/03/2024
           </Text>
         </View>
-        <View
+        <Picker
           style={{
             width: Layout.width,
-            flexDirection: 'row',
-            justifyContent: 'space-around',
           }}
+          selectedValue={chartType}
+          onValueChange={(itemValue) => setChartType(itemValue)}
         >
-          <Pressable
-            onPress={() => setChartIsVoltage(true)}
-            style={{
-              padding: Spacing * 2,
-              backgroundColor: Colors.primary,
-              marginVertical: Spacing * 3,
-              borderRadius: Spacing,
-              shadowColor: Colors.primary,
-              shadowOffset: {
-                width: 0,
-                height: Spacing,
-              },
-              shadowOpacity: 0.3,
-              shadowRadius: Spacing,
-            }}
-          >
-            <Text
-              style={{
-                fontFamily: Font['poppins-bold'],
-                color: Colors.onPrimary,
-                textAlign: 'center',
-                fontSize: FontSize.large,
-              }}
-            >
-              Voltagem
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={() => setChartIsVoltage(false)}
-            style={{
-              padding: Spacing * 2,
-              backgroundColor: Colors.primary,
-              marginVertical: Spacing * 3,
-              borderRadius: Spacing,
-              shadowColor: Colors.primary,
-              shadowOffset: {
-                width: 0,
-                height: Spacing,
-              },
-              shadowOpacity: 0.3,
-              shadowRadius: Spacing,
-            }}
-          >
-            <Text
-              style={{
-                fontFamily: Font['poppins-bold'],
-                color: Colors.onPrimary,
-                textAlign: 'center',
-                fontSize: FontSize.large,
-              }}
-            >
-              Corrente
-            </Text>
-          </Pressable>
-        </View>
+          <Picker.Item label="Tensão" value="voltage" />
+          <Picker.Item label="Corrente" value="current" />
+          <Picker.Item label="Potência Ativa" value="activePower" />
+          <Picker.Item label="Potência Aparente" value="apparentPower" />
+          <Picker.Item label="kWh Consumido" value="kWh" />
+        </Picker>
         <Canvas
           style={{
             width: Layout.width,
